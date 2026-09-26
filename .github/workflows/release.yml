@@ -293,11 +293,20 @@ jobs:
         run: |
           git archive ${{ github.ref_name }} -o artifacts/elasticvue-${{ steps.package-version.outputs.current-version }}-firefox-source.zip
 
+      - name: Leave Chrome to publish_chrome
+        id: bpp-keys
+        env:
+          BPP_KEYS: ${{ secrets.BPP_KEYS }}
+        run: |
+          keys=$(jq -c 'del(.chrome)' <<< "$BPP_KEYS")
+          echo "::add-mask::$keys"
+          echo "keys=$keys" >> "$GITHUB_OUTPUT"
+
       - name: Publish to browser stores
         uses: PlasmoHQ/bpp@v3
         continue-on-error: true
         with:
-          keys: ${{ secrets.BPP_KEYS }}
+          keys: ${{ steps.bpp-keys.outputs.keys }}
           firefox-file: artifacts/elasticvue-${{ steps.package-version.outputs.current-version }}-firefox.zip
           source-file: artifacts/elasticvue-${{ steps.package-version.outputs.current-version }}-firefox-source.zip
           edge-file: artifacts/elasticvue-${{ steps.package-version.outputs.current-version }}-edge.zip
